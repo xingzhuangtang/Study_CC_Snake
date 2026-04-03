@@ -1,0 +1,129 @@
+/* 像素复古风格 - 使用像素字体和块状设计 */
+@import url('https://fonts.googleapis.com/css2?family=Press+Start+2P&display=swap');
+
+* {
+    margin: 0;
+    padding: 0;
+    box-sizing: border-box;
+}
+
+body {
+    background-color: #1a1a2e;
+    font-family: 'Press Start 2P', 'Courier New', monospace;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    min-height: 100vh;
+    color: #eee;
+}
+
+.game-container {
+    text-align: center;
+    padding: 20px;
+}
+
+.title {
+    font-size: 24px;
+    margin-bottom: 20px;
+    color: #4ecca3;
+    text-shadow: 2px 2px #232946;
+}
+
+.info-panel {
+    display: flex;
+    justify-content: center;
+    gap: 40px;
+    margin-bottom: 15px;
+    font-size: 12px;
+}
+
+.score, .high-score {
+    background: #232946;
+    padding: 10px 20px;
+    border: 4px solid #4ecca3;
+    border-radius: 0;
+    image-rendering: pixelated;
+}
+
+#gameCanvas {
+    background-color: #0f0f23;
+    border: 4px solid #4ecca3;
+    box-shadow: 0 0 20px rgba(78, 204, 163, 0.3);
+    image-rendering: pixelated;
+}
+
+.controls {
+    margin-top: 20px;
+    display: flex;
+    justify-content: center;
+    gap: 10px;
+    flex-wrap: wrap;
+}
+
+.btn {
+    font-family: 'Press Start 2P', 'Courier New', monospace;
+    font-size: 10px;
+    padding: 12px 20px;
+    border: 4px solid;
+    cursor: pointer;
+    transition: all 0.1s;
+    text-transform: uppercase;
+}
+
+.btn-primary {
+    background: #4ecca3;
+    border-color: #3db892;
+    color: #1a1a2e;
+}
+
+.btn-primary:hover {
+    background: #3db892;
+}
+
+.btn-primary:disabled {
+    background: #2d3a4a;
+    border-color: #1a2a3a;
+    color: #5a6a7a;
+    cursor: not-allowed;
+}
+
+.btn-secondary {
+    background: #232946;
+    border-color: #4ecca3;
+    color: #4ecca3;
+}
+
+.btn-secondary:hover {
+    background: #2a3150;
+}
+
+.btn-secondary:disabled {
+    color: #5a6a7a;
+    border-color: #3a4a5a;
+    cursor: not-allowed;
+}
+
+select.btn {
+    cursor: pointer;
+}
+
+.instructions {
+    margin-top: 20px;
+    font-size: 8px;
+    color: #888;
+    line-height: 1.8;
+}
+
+/* 像素风格滚动条 */
+::-webkit-scrollbar {
+    width: 10px;
+}
+
+::-webkit-scrollbar-track {
+    background: #1a1a2e;
+}
+
+::-webkit-scrollbar-thumb {
+    background: #4ecca3;
+    border: 2px solid #1a1a2e;
+}

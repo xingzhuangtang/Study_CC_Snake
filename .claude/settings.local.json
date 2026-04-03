@@ -1,0 +1,12 @@
+{
+  "permissions": {
+    "allow": [
+      "WebSearch",
+      "WebFetch(domain:www.shougang.com.cn)",
+      "WebFetch(domain:m.bj.bendibao.com)",
+      "WebFetch(domain:m.36kr.com)",
+      "Skill(superpowers:brainstorming)",
+      "Bash(git add:*)"
+    ]
+  }
+}
