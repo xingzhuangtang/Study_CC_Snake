@@ -6,7 +6,8 @@
       "WebFetch(domain:m.bj.bendibao.com)",
       "WebFetch(domain:m.36kr.com)",
       "Skill(superpowers:brainstorming)",
-      "Bash(git add:*)"
+      "Bash(git add:*)",
+      "Bash(git push:*)"
     ]
   }
 }
