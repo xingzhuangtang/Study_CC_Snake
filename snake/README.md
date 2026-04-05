@@ -35,7 +35,7 @@ snake/
 ├── index.html    # 主页面
 ├── style.css     # 样式文件
 ├── game.js       # 游戏逻辑
-└── README.md     # 说明文档
+├── README.md     # 说明文档
 ```
 
 ## 🛠️ 技术栈
@@ -58,3 +58,9 @@ snake/
 ## 📄 License
 
 MIT
+
+## 🔗 相关文档
+
+- [API 参考](../docs/api.md) - 函数签名和配置说明
+- [开发指南](../docs/development.md) - 扩展开发和测试
+- [部署指南](../docs/deployment.md) - 部署到 GitHub Pages/Netlify
