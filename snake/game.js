@@ -8,7 +8,8 @@ const CONFIG = {
         easy: 200,
         medium: 150,
         hard: 100
-    }
+    },
+    get gridCount() { return this.canvasSize / this.gridSize; }
 };
 
 // 颜色配置 - 像素复古风格
@@ -18,6 +19,32 @@ const COLORS = {
     food: '#ff6b6b',
     grid: '#1a1a2e'
 };
+
+// 方向映射常量 - 避免重复创建
+const DIRECTION_MAP = {
+    'arrowup': { x: 0, y: -1 },
+    'arrowdown': { x: 0, y: 1 },
+    'arrowleft': { x: -1, y: 0 },
+    'arrowright': { x: 1, y: 0 },
+    'w': { x: 0, y: -1 },
+    's': { x: 0, y: 1 },
+    'a': { x: -1, y: 0 },
+    'd': { x: 1, y: 0 }
+};
+
+// 蛇眼偏移量 - 按方向映射
+const EYE_OFFSETS = {
+    '1,0':  [{x: 12, y: 5}, {x: 12, y: 12}],   // 右
+    '-1,0': [{x: 5, y: 5}, {x: 5, y: 12}],     // 左
+    '0,-1': [{x: 5, y: 5}, {x: 12, y: 5}],     // 上
+    '0,1':  [{x: 5, y: 12}, {x: 12, y: 12}]    // 下
+};
+
+// 蛇身位置 Set - O(1) 碰撞检测
+let snakeSet = new Set();
+
+// 防抖标记
+let scoreUpdatePending = false;
 
 // 游戏状态
 let snake = [];
@@ -72,16 +99,7 @@ function handleKeyPress(e) {
     }
 
     // 方向控制 - 防止反向转向
-    const newDir = {
-        'arrowup': { x: 0, y: -1 },
-        'arrowdown': { x: 0, y: 1 },
-        'arrowleft': { x: -1, y: 0 },
-        'arrowright': { x: 1, y: 0 },
-        'w': { x: 0, y: -1 },
-        's': { x: 0, y: 1 },
-        'a': { x: -1, y: 0 },
-        'd': { x: 1, y: 0 }
-    }[key];
+    const newDir = DIRECTION_MAP[key];
 
     if (newDir) {
         e.preventDefault();
@@ -94,6 +112,12 @@ function handleKeyPress(e) {
 
 // 开始游戏
 function startGame() {
+    // 确保清理旧定时器，防止内存泄漏
+    if (gameLoop) {
+        clearInterval(gameLoop);
+        gameLoop = null;
+    }
+
     // 重置状态
     snake = [
         { x: 5, y: 10 },
@@ -106,6 +130,10 @@ function startGame() {
     isPaused = false;
     isGameOver = false;
     scoreEl.textContent = score;
+    scoreUpdatePending = false;
+
+    // 更新蛇身 Set
+    updateSnakeSet();
 
     // 更新按钮状态
     startBtn.disabled = true;
@@ -116,7 +144,6 @@ function startGame() {
     draw();
 
     // 启动游戏循环
-    if (gameLoop) clearInterval(gameLoop);
     gameLoop = setInterval(update, currentSpeed);
 }
 
@@ -150,15 +177,19 @@ function changeDifficulty() {
     }
 }
 
+// 更新蛇身 Set - O(1) 碰撞检测
+function updateSnakeSet() {
+    snakeSet = new Set(snake.map(pos => `${pos.x},${pos.y}`));
+}
+
 // 生成食物
 function spawnFood() {
-    const gridWidth = CONFIG.canvasSize / CONFIG.gridSize;
-    const gridHeight = CONFIG.canvasSize / CONFIG.gridSize;
+    const gridCount = CONFIG.gridCount;
 
     do {
-        food.x = Math.floor(Math.random() * gridWidth);
-        food.y = Math.floor(Math.random() * gridHeight);
-    } while (snake.some(segment => segment.x === food.x && segment.y === food.y));
+        food.x = Math.floor(Math.random() * gridCount);
+        food.y = Math.floor(Math.random() * gridCount);
+    } while (snakeSet.has(`${food.x},${food.y}`));
 }
 
 // 更新游戏状态
@@ -174,38 +205,45 @@ function update() {
     };
 
     // 碰撞检测 - 墙壁
-    const gridWidth = CONFIG.canvasSize / CONFIG.gridSize;
-    const gridHeight = CONFIG.canvasSize / CONFIG.gridSize;
+    const gridCount = CONFIG.gridCount;
 
-    if (head.x < 0 || head.x >= gridWidth || head.y < 0 || head.y >= gridHeight) {
+    if (head.x < 0 || head.x >= gridCount || head.y < 0 || head.y >= gridCount) {
         gameOver();
         return;
     }
 
-    // 碰撞检测 - 自身
-    if (snake.some(segment => segment.x === head.x && segment.y === head.y)) {
+    // 碰撞检测 - 自身 - O(1)
+    if (snakeSet.has(`${head.x},${head.y}`)) {
         gameOver();
         return;
     }
 
     // 移动蛇
     snake.unshift(head);
+    updateSnakeSet();
 
     // 检测是否吃到食物
     if (head.x === food.x && head.y === food.y) {
         score += 10;
-        scoreEl.textContent = score;
 
-        // 更新最高分
-        if (score > highScore) {
-            highScore = score;
-            highScoreEl.textContent = highScore;
-            localStorage.setItem('snakeHighScore', highScore);
+        // 防抖更新分数和 localStorage
+        if (!scoreUpdatePending) {
+            scoreUpdatePending = true;
+            requestAnimationFrame(() => {
+                scoreEl.textContent = score;
+                if (score > highScore) {
+                    highScore = score;
+                    highScoreEl.textContent = highScore;
+                    localStorage.setItem('snakeHighScore', highScore);
+                }
+                scoreUpdatePending = false;
+            });
         }
 
         spawnFood();
     } else {
         snake.pop();
+        updateSnakeSet();
     }
 
     draw();
@@ -234,20 +272,17 @@ function draw() {
         if (index === 0) {
             ctx.fillStyle = '#000';
             const eyeSize = 4;
-            const eyeOffset = 5;
+            const key = `${direction.x},${direction.y}`;
+            const offsets = EYE_OFFSETS[key];
 
-            if (direction.x === 1) { // 向右
-                ctx.fillRect(segment.x * CONFIG.gridSize + 12, segment.y * CONFIG.gridSize + 5, eyeSize, eyeSize);
-                ctx.fillRect(segment.x * CONFIG.gridSize + 12, segment.y * CONFIG.gridSize + 12, eyeSize, eyeSize);
-            } else if (direction.x === -1) { // 向左
-                ctx.fillRect(segment.x * CONFIG.gridSize + 5, segment.y * CONFIG.gridSize + 5, eyeSize, eyeSize);
-                ctx.fillRect(segment.x * CONFIG.gridSize + 5, segment.y * CONFIG.gridSize + 12, eyeSize, eyeSize);
-            } else if (direction.y === -1) { // 向上
-                ctx.fillRect(segment.x * CONFIG.gridSize + 5, segment.y * CONFIG.gridSize + 5, eyeSize, eyeSize);
-                ctx.fillRect(segment.x * CONFIG.gridSize + 12, segment.y * CONFIG.gridSize + 5, eyeSize, eyeSize);
-            } else { // 向下
-                ctx.fillRect(segment.x * CONFIG.gridSize + 5, segment.y * CONFIG.gridSize + 12, eyeSize, eyeSize);
-                ctx.fillRect(segment.x * CONFIG.gridSize + 12, segment.y * CONFIG.gridSize + 12, eyeSize, eyeSize);
+            if (offsets) {
+                offsets.forEach(offset => {
+                    ctx.fillRect(
+                        segment.x * CONFIG.gridSize + offset.x,
+                        segment.y * CONFIG.gridSize + offset.y,
+                        eyeSize, eyeSize
+                    );
+                });
             }
         }
     });
