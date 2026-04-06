@@ -26,9 +26,6 @@ jobs:
         with:
           python-version: '3.x'
 
-      - name: Install JavaScript linter
-        run: pip install quick-lint-js
-
       - name: Validate HTML
         run: |
           htmlhint snake/index.html || true
@@ -37,6 +34,12 @@ jobs:
       - name: Check JavaScript syntax
         run: |
           node --check snake/game.js
+          node --check snake/game-core.js
+
+      - name: Run unit tests
+        run: |
+          cd snake
+          node tests/run-tests.js
 
       - name: Verify file structure
         run: |
