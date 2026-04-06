@@ -1,0 +1,80 @@
+#!/bin/bash
+# Pre-commit hook for Snake Game project
+# 安装：cp .githooks/pre-commit .git/hooks/pre-commit && chmod +x .git/hooks/pre-commit
+
+set -e
+
+echo "🔍 Running pre-commit checks..."
+
+# 颜色定义
+RED='\033[0;31m'
+GREEN='\033[0;32m'
+YELLOW='\033[1;33m'
+NC='\033[0m' # No Color
+
+ERRORS=0
+
+# 1. JavaScript 语法检查
+echo -e "\n${YELLOW}Checking JavaScript syntax...${NC}"
+if command -v node &> /dev/null; then
+    if node --check snake/game.js 2>/dev/null; then
+        echo -e "${GREEN}✓ JavaScript syntax OK${NC}"
+    else
+        echo -e "${RED}✗ JavaScript syntax error${NC}"
+        ERRORS=$((ERRORS + 1))
+    fi
+else
+    echo -e "${YELLOW}⚠ Node.js not installed, skipping JS check${NC}"
+fi
+
+# 2. 检查必需文件
+echo -e "\n${YELLOW}Checking required files...${NC}"
+REQUIRED_FILES=("snake/index.html" "snake/game.js" "snake/style.css" "snake/README.md")
+for file in "${REQUIRED_FILES[@]}"; do
+    if [ -f "$file" ]; then
+        echo -e "${GREEN}✓ $file exists${NC}"
+    else
+        echo -e "${RED}✗ $file missing${NC}"
+        ERRORS=$((ERRORS + 1))
+    fi
+done
+
+# 3. 检查文档
+echo -e "\n${YELLOW}Checking documentation...${NC}"
+DOC_FILES=("README.md" "docs/api.md")
+for file in "${DOC_FILES[@]}"; do
+    if [ -f "$file" ]; then
+        echo -e "${GREEN}✓ $file exists${NC}"
+    else
+        echo -e "${YELLOW}⚠ $file missing (optional)${NC}"
+    fi
+done
+
+# 4. 检查文件大小（避免提交大文件）
+echo -e "\n${YELLOW}Checking file sizes...${NC}"
+MAX_SIZE=1048576  # 1MB
+for file in snake/*; do
+    if [ -f "$file" ]; then
+        SIZE=$(stat -f%z "$file" 2>/dev/null || stat -c%s "$file" 2>/dev/null || echo 0)
+        if [ "$SIZE" -gt "$MAX_SIZE" ]; then
+            echo -e "${YELLOW}⚠ $file is larger than 1MB ($SIZE bytes)${NC}"
+        fi
+    fi
+done
+
+# 5. 检查是否有敏感信息
+echo -e "\n${YELLOW}Checking for sensitive information...${NC}"
+if grep -r "password\|secret\|api_key\|token" snake/*.js snake/*.html 2>/dev/null | grep -v "// " | grep -v "/* " | grep -v "localStorage" > /dev/null; then
+    echo -e "${YELLOW}⚠ Potential sensitive data found in code${NC}"
+fi
+
+# 总结
+echo -e "\n================================"
+if [ $ERRORS -eq 0 ]; then
+    echo -e "${GREEN}✓ All pre-commit checks passed${NC}"
+    exit 0
+else
+    echo -e "${RED}✗ $ERRORS check(s) failed${NC}"
+    echo -e "${YELLOW}Commit blocked. Please fix the errors above.${NC}"
+    exit 1
+fi

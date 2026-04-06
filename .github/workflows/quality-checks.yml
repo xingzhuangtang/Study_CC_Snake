@@ -1,0 +1,57 @@
+name: Quality Checks
+
+on:
+  push:
+    branches: [ master ]
+  pull_request:
+    branches: [ master ]
+
+jobs:
+  validate:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+
+      - name: Install HTMLHint
+        run: npm install -g htmlhint
+
+      - name: Setup Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.x'
+
+      - name: Install JavaScript linter
+        run: pip install quick-lint-js
+
+      - name: Validate HTML
+        run: |
+          htmlhint snake/index.html || true
+        continue-on-error: true
+
+      - name: Check JavaScript syntax
+        run: |
+          node --check snake/game.js
+
+      - name: Verify file structure
+        run: |
+          echo "=== File Structure ==="
+          ls -la snake/
+          echo "=== Checking required files ==="
+          test -f snake/index.html && echo "✓ index.html exists"
+          test -f snake/game.js && echo "✓ game.js exists"
+          test -f snake/style.css && echo "✓ style.css exists"
+          test -f snake/README.md && echo "✓ README.md exists"
+
+      - name: Check documentation
+        run: |
+          echo "=== Documentation Check ==="
+          test -f README.md && echo "✓ Root README exists"
+          test -f docs/api.md && echo "✓ API docs exist"
+          test -f docs/development.md && echo "✓ Development guide exists"
+          test -f docs/deployment.md && echo "✓ Deployment guide exists"
